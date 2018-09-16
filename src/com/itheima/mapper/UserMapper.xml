@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itheima.mapper.UserMapper">
+    
+    <!-- 根据id查找用户  -->
+    <select id="findById" parameterType="Integer" resultType="User">
+        SELECT * FROM USER
+			WHERE id=#{id}
+    </select>
+        
+    
+    <!-- 使用包装类型查询用户 -->
+    <select id="findByQueryVo" parameterType="QueryVo" resultType="User">
+		SELECT * FROM USER
+			WHERE USERNAME LIKE "%"#{user.name}"%"
+    </select>
+    
+    <!-- 查询表中的总条数 -->
+    <select id="totalCount" resultType="Integer">
+        SELECT COUNT(1) FROM USER
+    </select>
+    
+    
+    <!-- 
+    	声明sql片段
+    	1.作用：重复片段的抽取
+    	2.这样可以做到代码的简写
+     -->
+     <sql id="user_sql">
+         SELECT id,username,birthday,sex,address
+        	FROM USER
+     </sql>
+    
+    <!-- 
+    	动态sql的学习(多个条件的查询)
+    	1.if条件可以限制，当前sql是否要被执行
+    	2.where可以去掉前and
+     -->
+    <select id="findByCriteria" parameterType="User" resultType="User">
+        <!-- SELECT id,username,birthday,sex,address
+        	FROM USER -->
+        	
+        	<!-- 利用sql片段 -->
+        	<include refid="user_sql"></include>
+			<where>
+			<if test="sex != null and sex!=''">
+			   sex=#{sex}
+			</if> 
+			<if test="username != null and username!=''">
+			    AND username like "%"#{username}"%"
+			</if>
+			</where>
+    </select>
+    
+    
+    <!-- 
+    	foreach标签的使用
+    	1.collection是指遍历的集合（除对象外，其他都有点特殊）数组==>array,list集合==>list
+    	2.open:指前
+    	3.close:指后
+    	4.separator:指分隔
+      -->
+    <!-- 第一种:数组形式 -->
+    <select id="findByIds_Array" parameterType="Integer[]" resultType="User">
+        SELECT * FROM USER
+			<where>
+			    id
+			    <foreach collection="array" item="item" open="in (" close=")" separator=",">
+			        #{item}
+			    </foreach>
+			</where>
+    </select>
+    <!-- 第二种：集合形式 -->
+    <select id="findByIds_List" parameterType="List" resultType="User">
+        SELECT * FROM USER
+			<where>
+			    id
+			    <foreach collection="list" item="item" open="in (" close=")" separator=",">
+			        #{item}
+			    </foreach>
+			</where>
+    </select>
+    <!-- 第三种：QueryVo形式 (如果是其中一个属性，collection要写成属性)-->
+    <select id="findByIds_QueryVo" parameterType="QueryVo" resultType="User">
+        SELECT * FROM USER
+			<where>
+			    id
+			    <foreach collection="ids" item="item" open="in (" close=")" separator=",">
+			        #{item}
+			    </foreach>
+			</where>
+    </select>
+    
+    
+    <resultMap type="User" id="UserToOrdersMapper">
+        <!-- 主键 -->
+       <id column="id" property="id"></id>
+       <!-- 除主键外的其他属性 -->
+       <result column="username" property="username"/>
+       <result column="sex" property="sex"/>
+       <result column="birthday" property="birthday"/>
+       <result column="address" property="address"/>
+       
+       <!-- 1对多属性 -->
+       <collection property="orders" javaType="list" ofType="Orders">
+           <id column="orderId" property="id"/>
+           <result column="number" property="number"/>
+           <result column="createtime" property="createtime"/>
+       </collection>
+    </resultMap>
+    
+    <!-- 1对多，左外连接 -->
+    <select id="userToOrders" resultMap="UserToOrdersMapper">
+        SELECT 
+			u.id,u.username,u.birthday,u.sex,u.address,
+			o.id orderId,o.number,o.createtime
+			FROM USER u
+			LEFT JOIN orders o ON u.id=o.user_id;
+    </select>
+    </mapper>

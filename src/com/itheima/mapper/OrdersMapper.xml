@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 学习输出映射(当数据库中的字段和对象的属性不一致时使用):resultMap -->
+<mapper namespace="com.itheima.mapper.OrdersMapper">
+    <!-- 
+    	type:指要映射到哪个pojo上
+    	id:指一个名字，下面要用到的名字
+     -->
+    <resultMap type="Orders" id="Orders">
+        <!-- 定义主键 -->
+        <id column="id" property="id"/>
+        
+        <!-- 定义普通属性 -->
+        <result column="user_id" property="userId"/>
+        
+        <!-- 由于是单表，所以其他属性，只要数据中有对应列就会自动补上 -->
+        
+    </resultMap>
+    <select id="findAll" resultMap="Orders">
+        SELECT * FROM orders;
+    </select>
+    
+    <!-- 1对1查询(利用改造pojo类) -->
+    <select id="ordersToUserOne" resultType="OrdersUser">
+        SELECT 
+			o.id,o.number,o.createtime ,
+			o.user_id userId,<!-- 起一个别名方便属性和字段对应 -->
+			u.username,u.address
+		FROM orders o
+		LEFT JOIN USER u
+		ON o.user_id=u.id
+    </select>
+    
+    
+    <!-- 
+    	1对1查询(利用附加对象，resultMap)
+    	1.利用这种方式，如果是多表，就要每一个字段都要映射
+    	2.如果没有利用resultMap，只要映射不同字段就行，并且有时还可以利用起别名的方式解决问题
+    -->
+    <resultMap type="Orders" id="OrdersUserMap" >
+        
+        <!-- Orders对象的属性 -->
+        <id column="id" property="id"/>
+        <result column="userId" property="userId"/>
+		<result column="number" property="number"/>
+		<result column="createtime" property="createtime"/>
+		
+		<!-- 实现1对1关系 -->
+		<!-- 
+			property:指Orders中的属性 user
+			javaType:指要映射成的类型,这个不可以省略
+		 -->
+		<association property="user" javaType="User">
+		    <result column="username" property="username"/>
+		    <result column="address" property="address"/>
+		</association>
+    </resultMap>
+    <select id="ordersToUserTwo" resultMap="OrdersUserMap">
+        SELECT 
+			o.id,o.number,o.createtime ,
+			o.user_id userId,<!-- 起一个别名方便属性和字段对应 -->
+			u.username,u.address
+		FROM orders o
+		LEFT JOIN USER u
+		ON o.user_id=u.id
+    </select>
+    
+</mapper>
